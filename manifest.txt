@@ -1,0 +1,8 @@
+sample1,raw_seqs_dir/Test01_full_L001_R1_001.fastq.gz,forward
+sample1,raw_seqs_dir/Test01_full_L001_R2_001.fastq.gz,reverse
+sample2,raw_seqs_dir/Test02_full_L001_R1_001.fastq.gz,forward
+sample2,raw_seqs_dir/Test02_full_L001_R2_001.fastq.gz,reverse
+sample3,raw_seqs_dir/Test03_full_L001_R1_001.fastq.gz,forward
+sample3,raw_seqs_dir/Test03_full_L001_R2_001.fastq.gz,reverse
+sample4,raw_seqs_dir/Test04_full_L001_R1_001.fastq.gz,forward
+sample4,raw_seqs_dir/Test04_full_L001_R2_001.fastq.gz,reverse
