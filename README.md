@@ -11,6 +11,7 @@ This protocol is specific to analyzing microbial eukaryotic diversity by way of 
 * Contents of this repo
 * [QIIME2](https://docs.qiime2.org/2018.4/) version 2018.4
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
+* R
 * Reference database for downstream sequence clustering & taxonomy assignment. For 18S (microbial eukaryotic) work, I prefer [PR2](https://github.com/vaulot/pr2_database/wiki)
 * To follow step by step instructions below, follow along with test files provided from here: zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1236641.svg)](https://doi.org/10.5281/zenodo.1236641)
 
@@ -334,7 +335,7 @@ qiime tools export tax.qza \
 
 ## Compile OTU and taxonomy tables for downstream analysis in R
 
-Import .tsv OTU table and reformat so that column names are sample names
+Import .tsv OTU table and reformat so that column names are sample names. Compiled count information with taxonomy assignments. See script: compile_counts_tax.r
 
 ```
 # Start R environment
