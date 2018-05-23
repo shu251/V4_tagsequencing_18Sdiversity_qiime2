@@ -12,8 +12,58 @@ This protocol is specific to analyzing microbial eukaryotic diversity by way of 
 * [QIIME2](https://docs.qiime2.org/2018.4/) version 2018.4
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
 * R
-* Reference database for downstream sequence clustering & taxonomy assignment. For 18S (microbial eukaryotic) work, I prefer [PR2](https://github.com/vaulot/pr2_database/wiki)
+* *See section below* Reference database to be used for downstream sequence clustering & taxonomy assignment. For 18S (microbial eukaryotic) work, I prefer [PR2](https://github.com/vaulot/pr2_database/wiki)
 * To follow step by step instructions below, follow along with test files provided from here: zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1236641.svg)](https://doi.org/10.5281/zenodo.1236641)
+
+## Prep reference database
+
+For several steps (including: closed OTU clusering, chimera detection, and taxonomy assignment) you will need a reference database that is imported as an artifact into qiime2.
+
+Use below commands to set up this reference database with accompanying taxonomy information. Here, I'm using [PR2](https://github.com/vaulot/pr2_database/wiki) v4.10 (May 2018).
+
+You will need to download both the fasta file and a taxonomy file. Then you'll need to import as artifacts (*create a .qza file*), [see instructions here](https://docs.qiime2.org/2018.4/tutorials/feature-classifier/).
+
+Replace the below $PWD/pr2.fasta and pr2_tax.txt with appropriate path and reference fasta and taxonomy text file. 
+
+You can import both the fasta DB file and taxonomy file as QIIME2 artifacts:
+```
+# activate the qiime2 environment
+source activate qiime2-2018.4
+
+# First import the database
+qiime tools import \
+  --type 'FeatureData[Sequence]' \
+  --input-path $PWD/db/pr2.fasta \
+  --output-path $PWD/db/pr2.qza
+
+# Then the taxonomy file
+qiime tools import \
+  --type 'FeatureData[Taxonomy]' \
+  --source-format HeaderlessTSVTaxonomyFormat \
+  --input-path $PWD/db/pr2_tax.txt \
+  --output-path $PWD/db/pr2_tax.qza
+
+```
+Then you have the option to select the region within the fasta db specific to the primers you used and train the classifer:
+```
+# Select V4 region from the PR2 database
+# Use appropriate forward and reverse primers
+qiime feature-classifier extract-reads \
+  --i-sequences $PWD/db/pr2.qza \
+  --p-f-primer CCAGCASCYGCGGTAATTCC \
+  --p-r-primer ACTTTCGTTCTTGATYRA \
+  --p-trunc-len 150 \
+  --o-reads $PWD/db/v4_extracts.qza
+
+# Train the classifier
+qiime feature-classifier fit-classifier-naive-bayes \
+  --i-reference-reads $PWD/db/v4_extracts.qza \
+  --i-reference-taxonomy $PWD/db/pr2_tax.qza \
+  --o-classifier $PWD/db/pr2_classifier.qza
+
+# tip: make sure you version the databases and taxonomy files you're using. These are often updated so you want o keep them current, but also be able to match the appropriate fasta and taxonomy file.
+  
+```
 
 ## Prep directories and sample IDs to import into QIIME2 environment.
 
@@ -131,32 +181,6 @@ Now you have final QC'ed reads (chimera checking is after OTU/ASV clustering bel
 
 Below are preferred approaches for closed or *de novo* OTU clustering specific for 18S tag-sequencing (how much fun is protistan diversity?). [For open-reference OTU clustering, I still prefer to use QIIME1](https://github.com/shu251/V4_tagsequencing_18Sdiversity_q1). But check back as we continue migrating over to QIIME2.
 
-### Reference databases
-Set up reference database with accompanying taxonomy information. Here, I'm using [PR2](https://github.com/vaulot/pr2_database/wiki) v4.10.
-
-You will need to import the fasta and appropriate taxonomy file of your favorite database into qiime2. [See directions here](https://docs.qiime2.org/2018.4/tutorials/feature-classifier/). Replace the below $PWD/pr2.fasta and pr2_tax.txt with appropriate path and reference fasta and taxonomy text file. For one of the taxonomy assignment commands below you need to use a database trained with specific primers. Example with PR2 database and V4 primers below:
-```
-qiime tools import \
-  --type 'FeatureData[Sequence]' \
-  --input-path $PWD/pr2.fasta \
-  --output-path $PWD/pr2.qza
-
-qiime tools import \
-  --type 'FeatureData[Taxonomy]' \
-  --source-format HeaderlessTSVTaxonomyFormat \
-  --input-path $PWD/pr2_tax.tax \
-  --output-path $PWD/pr2_tax.qza
-  
-# Classifier w/ specific primers
-## Specific to V4 primers
-qiime feature-classifier extract-reads \
-  --i-sequences $PWD/pr2.qza \
-  --p-f-primer CCAGCASCYGCGGTAATTCC \
-  --p-r-primer ACTTTCGTTCTTGATYRA \
-  --p-trunc-len 150 \
-  --o-reads $PWD/pr2_classifier.qza
-```
-
 ## **Closed reference OTU clustering**
 
 Generate a new directory to store output files from closed reference OTU clustering and then run. Here, I'm using 0.97 percent identity. Replace '--i-reference-sequences' with location of choice (and trained!) database.
@@ -166,7 +190,7 @@ mkdir closedref
 qiime vsearch cluster-features-closed-reference \
 	--i-table derep_table.qza \
 	--i-sequences derep_seqs.qza \
-	--i-reference-sequences $PWD/pr2.qza \
+	--i-reference-sequences $PWD/db/pr2.qza \
 	--o-clustered-table closedref/table_closed_97.qza \
 	--o-unmatched-sequences closedref/unmatched_seqs.qza \
 	--o-clustered-sequences closedref/rep-seqs_closed_97.qza \
@@ -286,24 +310,25 @@ qiime dada2 denoise-paired \
 ## Assign taxonomy
 
 Use rep-seqs*nc.qza (OTU clustering) or rep-seqs.qza (ASV clustering) files to assign taxonomy to the representative sequence.
+See above section on preparing reference databases.
 
 *Two options:*
 [Vsearch](https://peerj.com/articles/2584/)
 ```
 qiime feature-classifier classify-consensus-vsearch \
 	--i-query rep-seqs_closed_ref_nc.qza \
-	--i-reference-reads $PWD/pr2.qza \
-	--i-reference-taxonomy $PWD/pr2_tax.qza \
+	--i-reference-reads $PWD/db/pr2.qza \
+	--i-reference-taxonomy $PWD/db/pr2_tax.qza \
 	--p-perc-identity 0.9 \
 	--p-threads 8 \
 	--o-classification tax_vsearch.qza
 ```
 
-Alternatively, you can pre-fix a classifier to assign taxonomy:
+Alternatively, you can pre-train a classifier to assign taxonomy:
 [Documentation here](https://docs.qiime2.org/2018.4/plugins/available/feature-classifier/classify-sklearn/?highlight=sklearn). For this one you can pre-fit your reference database using the primers for your amplicon [see here](https://docs.qiime2.org/2018.4/tutorials/feature-classifier/).
 ```
 qiime feature-classifier classify-sklearn \
-	--i-classifier $PWD/pr2_classifier.qza \
+	--i-classifier $PWD/db/pr2_classifier.qza \
 	--i-reads rep-seqs.qza \
 	--o-classification tax_sklearn.qza
 ```
