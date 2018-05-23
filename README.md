@@ -225,10 +225,11 @@ This happens in two steps
 2. Then the table and rep-seqs files need to be filtered (removed) out.
 
 Input files:
-OTU clustering | Table | Representative sequences
----------------|-------|-------------------------
-Closed reference | table_closed_97.qza | rep-seqs_closed_97.qza
-De novo | table_dn_97.qza | rep-seqs_dn_97.qza
+
+| OTU clustering  |     Table           | Representative sequences|
+|-----------------|:-------------------:|------------------------:|
+|Closed reference | table_closed_97.qza | rep-seqs_closed_97.qza  |
+| *De novo*       | table_dn_97.qza     | rep-seqs_dn_97.qza      |
 
 **Reference-based chimera checking**
 Here, use the reference database you may have used for OTU clustering and the one you'll use for taxonomy assignment. [QIIME 2 documentation](https://docs.qiime2.org/2018.4/plugins/available/vsearch/uchime-ref/)
